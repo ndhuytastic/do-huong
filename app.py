@@ -2,7 +2,7 @@ import streamlit as st
 import json
 import os
 
-st.set_page_config(page_title="Hieu Chinh La Ban", layout="centered")
+st.set_page_config(page_title="Hiệu Chỉnh La Bàn", layout="centered")
 
 DATA_FILE = "huong_chuan.json"
 
