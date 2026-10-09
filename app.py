@@ -6,6 +6,13 @@ st.set_page_config(page_title="Hiệu Chỉnh La Bàn", layout="centered")
 
 DATA_FILE = "huong_chuan.json"
 
+# Danh sách 24 sơn hướng (Mỗi sơn chiếm 15 độ)
+SON_HUONG_24 = [
+    "Tý", "Quý", "Sửu", "Cấn", "Dần", "Giáp", "Mão", "Ất", 
+    "Thìn", "Tốn", "Tỵ", "Bính", "Ngọ", "Đinh", "Mùi", "Khôn", 
+    "Thân", "Canh", "Dậu", "Tân", "Tuất", "Càn", "Hợi", "Nhâm"
+]
+
 # Ham doc/ghi du lieu
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -60,7 +67,7 @@ if st.session_state.saved_angles:
     options = ["Tự Nhập Bên Dưới..."] + list(st.session_state.saved_angles.keys())
     choice = st.selectbox("Chọn Hướng Đã Lưu:", options)
     
-    if choice != "Tu nhap so...":
+    if choice != "Tự Nhập Bên Dưới...":
         default_true_angle = st.session_state.saved_angles[choice]
     else:
         default_true_angle = 0.0
@@ -78,5 +85,10 @@ if st.button("Kết Quả", type="primary", use_container_width=True):
     chenh_lech = huong_chinh_xac - huong_do_duoc
     ket_qua = (huong_can_do + chenh_lech) % 360
     
+    # Tinh toan thuoc Son Huong nao trong 24 Son
+    # Cong them 7.5 de dich chuyen moc 0 do vao giua Son Ty
+    index = int(((ket_qua + 7.5) % 360) / 15)
+    son_huong = SON_HUONG_24[index]
+    
     st.write("---")
-    st.subheader(f"KẾT QUẢ: {ket_qua:.1f} độ")
+    st.subheader(f"KẾT QUẢ: {ket_qua:.1f} độ - {son_huong}")
