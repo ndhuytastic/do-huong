@@ -41,11 +41,11 @@ if st.button("Lưu Thông Tin"):
 
 # Danh sach da luu
 if st.session_state.saved_angles:
-    st.write("Cac vi tri da luu:")
+    st.write("Các Vị Trí Đã Lưu:")
     for name, angle in st.session_state.saved_angles.items():
         c1, c2 = st.columns([3, 1])
-        c1.write(f"- {name}: {angle} do")
-        if c2.button("Xoa", key=f"del_{name}"):
+        c1.write(f"- {name}: {angle} độ")
+        if c2.button("Xóa", key=f"del_{name}"):
             del st.session_state.saved_angles[name]
             save_data(st.session_state.saved_angles)
             st.rerun()
@@ -57,7 +57,7 @@ st.header("2. Tính Toán Thực Tế")
 
 # Chon huong
 if st.session_state.saved_angles:
-    options = ["Tu nhap so..."] + list(st.session_state.saved_angles.keys())
+    options = ["Tự Nhập Bên Dưới..."] + list(st.session_state.saved_angles.keys())
     choice = st.selectbox("Chọn Hướng Đã Lưu:", options)
     
     if choice != "Tu nhap so...":
@@ -79,4 +79,4 @@ if st.button("Kết Quả", type="primary", use_container_width=True):
     ket_qua = (huong_can_do + chenh_lech) % 360
     
     st.write("---")
-    st.subheader(f"KẾT QUẢ: {ket_qua:.1f} do")
+    st.subheader(f"KẾT QUẢ: {ket_qua:.1f} độ")
