@@ -117,5 +117,4 @@ if st.button("Kết Quả", type="primary", use_container_width=True):
         ket_thuc_la_ban = (ket_thuc_thuc_te - chenh_lech) % 360
         
         st.subheader(f"KẾT QUẢ TÌM SƠN {son_can_tim.upper()}:")
-        st.write(f"Trên la bàn của bạn, sơn **{son_can_tim}** sẽ hiển thị nằm trong khoảng:")
         st.info(f"Từ **{bat_dau_la_ban:.1f} độ** đến **{ket_thuc_la_ban:.1f} độ**")
