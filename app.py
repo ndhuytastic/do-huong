@@ -1,30 +1,49 @@
 import streamlit as st
 import json
-import os
+import requests
 
 st.set_page_config(page_title="Hiệu Chỉnh La Bàn", layout="centered")
 
-DATA_FILE = "huong_chuan.json"
+# --- KẾT NỐI VỚI CLOUD JSONBIN ---
+# Lấy API Key từ cài đặt Secrets của Streamlit
+try:
+    BIN_ID = st.secrets["BIN_ID"]
+    API_KEY = st.secrets["API_KEY"]
+except:
+    st.error("Chưa cấu hình API Key trong Streamlit Secrets!")
+    st.stop()
 
-# Danh sách 24 sơn hướng (Mỗi sơn chiếm 15 độ)
+URL = f"https://api.jsonbin.io/v3/b/{BIN_ID}"
+HEADERS = {
+    "X-Master-Key": API_KEY,
+    "Content-Type": "application/json"
+}
+
+# Hàm Đọc dữ liệu từ Cloud
+def load_data():
+    try:
+        response = requests.get(URL, headers=HEADERS)
+        if response.status_code == 200:
+            return response.json().get("record", {})
+        return {}
+    except:
+        return {}
+
+# Hàm Ghi dữ liệu lên Cloud
+def save_data(data):
+    try:
+        requests.put(URL, json=data, headers=HEADERS)
+    except Exception as e:
+        st.error("Lỗi khi lưu lên Cloud")
+
+# Danh sách 24 sơn hướng
 SON_HUONG_24 = [
     "Tý", "Quý", "Sửu", "Cấn", "Dần", "Giáp", "Mão", "Ất", 
     "Thìn", "Tốn", "Tỵ", "Bính", "Ngọ", "Đinh", "Mùi", "Khôn", 
     "Thân", "Canh", "Dậu", "Tân", "Tuất", "Càn", "Hợi", "Nhâm"
 ]
 
-# Ham doc/ghi du lieu
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
-            return json.load(f)
-    return {}
-
-def save_data(data):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f)
-
-# Khoi tao bien luu tru
+# Khoi tao bien luu tru (Lấy từ Cloud khi mở app)
 if "saved_angles" not in st.session_state:
     st.session_state.saved_angles = load_data()
 
@@ -43,6 +62,7 @@ with col2:
 if st.button("Lưu Thông Tin"):
     if new_name:
         st.session_state.saved_angles[new_name] = new_angle
+        # Vừa lưu vào state hiện tại, vừa đẩy lên Cloud
         save_data(st.session_state.saved_angles)
         st.rerun()
 
@@ -54,7 +74,7 @@ if st.session_state.saved_angles:
         c1.write(f"- {name}: {angle} độ")
         if c2.button("Xóa", key=f"del_{name}"):
             del st.session_state.saved_angles[name]
-            save_data(st.session_state.saved_angles)
+            save_data(st.session_state.saved_angles) # Cập nhật lại Cloud sau khi xóa
             st.rerun()
 
 st.markdown("---")
@@ -96,7 +116,6 @@ if st.button("Kết Quả", type="primary", use_container_width=True):
     st.write("---")
     
     if che_do == "Đo Hướng":
-        # Tinh toan huong thuc te tu so la ban
         ket_qua = (huong_can_do + chenh_lech) % 360
         index = int(((ket_qua + 7.5) % 360) / 15)
         son_huong = SON_HUONG_24[index]
@@ -104,15 +123,12 @@ if st.button("Kết Quả", type="primary", use_container_width=True):
         st.subheader(f"KẾT QUẢ: {ket_qua:.1f} độ - {son_huong}")
         
     else: # Che do "Tim Son"
-        # Lay tam do cua Son tren thuc te (Vi du: Ty la 0 do)
         index_son = SON_HUONG_24.index(son_can_tim)
         tam_son_thuc_te = index_son * 15
         
-        # Bien do cua Son la +- 7.5 do
         bat_dau_thuc_te = tam_son_thuc_te - 7.5
         ket_thuc_thuc_te = tam_son_thuc_te + 7.5
         
-        # Ap dung do lech de ra so tren La ban
         bat_dau_la_ban = (bat_dau_thuc_te - chenh_lech) % 360
         ket_thuc_la_ban = (ket_thuc_thuc_te - chenh_lech) % 360
         
