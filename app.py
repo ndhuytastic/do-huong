@@ -5,12 +5,11 @@ import requests
 st.set_page_config(page_title="Hiệu Chỉnh La Bàn", layout="centered")
 
 # --- KẾT NỐI VỚI CLOUD JSONBIN ---
-# Lấy API Key từ cài đặt Secrets của Streamlit
 try:
     BIN_ID = st.secrets["BIN_ID"]
     API_KEY = st.secrets["API_KEY"]
 except:
-    st.error("Chưa cấu hình API Key trong Streamlit Secrets!")
+    st.error("❌ Chưa cấu hình API Key trong Streamlit Secrets!")
     st.stop()
 
 URL = f"https://api.jsonbin.io/v3/b/{BIN_ID}"
@@ -19,22 +18,27 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-# Hàm Đọc dữ liệu từ Cloud
+# Hàm Đọc dữ liệu từ Cloud (Có báo lỗi)
 def load_data():
     try:
         response = requests.get(URL, headers=HEADERS)
         if response.status_code == 200:
             return response.json().get("record", {})
-        return {}
-    except:
+        else:
+            st.error(f"❌ Lỗi Tải Dữ Liệu: {response.status_code} - {response.text}")
+            return {}
+    except Exception as e:
+        st.error(f"❌ Lỗi mạng khi tải: {e}")
         return {}
 
-# Hàm Ghi dữ liệu lên Cloud
+# Hàm Ghi dữ liệu lên Cloud (Có báo lỗi)
 def save_data(data):
     try:
-        requests.put(URL, json=data, headers=HEADERS)
+        response = requests.put(URL, json=data, headers=HEADERS)
+        if response.status_code != 200:
+            st.error(f"❌ Lỗi Lưu Dữ Liệu: {response.status_code} - {response.text}")
     except Exception as e:
-        st.error("Lỗi khi lưu lên Cloud")
+        st.error(f"❌ Lỗi mạng khi lưu: {e}")
 
 # Danh sách 24 sơn hướng
 SON_HUONG_24 = [
@@ -43,7 +47,7 @@ SON_HUONG_24 = [
     "Thân", "Canh", "Dậu", "Tân", "Tuất", "Càn", "Hợi", "Nhâm"
 ]
 
-# Khoi tao bien luu tru (Lấy từ Cloud khi mở app)
+# Khoi tao bien luu tru 
 if "saved_angles" not in st.session_state:
     st.session_state.saved_angles = load_data()
 
@@ -52,17 +56,15 @@ st.title("Hiệu Chỉnh La Bàn")
 # --- PHAN 1: QUAN LY HUONG CHUAN ---
 st.header("1. Quản Lý")
 
-# Form them moi
 col1, col2 = st.columns([2, 1])
 with col1:
-    new_name = st.text_input("Tên Vị Trí")
+    new_name = st.text_input("Ten vi tri")
 with col2:
     new_angle = st.number_input("Độ Chính Xác", min_value=0.0, max_value=360.0, step=0.1)
 
 if st.button("Lưu Thông Tin"):
     if new_name:
         st.session_state.saved_angles[new_name] = new_angle
-        # Vừa lưu vào state hiện tại, vừa đẩy lên Cloud
         save_data(st.session_state.saved_angles)
         st.rerun()
 
@@ -74,7 +76,7 @@ if st.session_state.saved_angles:
         c1.write(f"- {name}: {angle} độ")
         if c2.button("Xóa", key=f"del_{name}"):
             del st.session_state.saved_angles[name]
-            save_data(st.session_state.saved_angles) # Cập nhật lại Cloud sau khi xóa
+            save_data(st.session_state.saved_angles)
             st.rerun()
 
 st.markdown("---")
@@ -82,7 +84,6 @@ st.markdown("---")
 # --- PHAN 2: TINH TOAN HUONG ---
 st.header("2. Tính Toán Thực Tế")
 
-# Chon huong
 if st.session_state.saved_angles:
     options = ["Tự Nhập Bên Dưới..."] + list(st.session_state.saved_angles.keys())
     choice = st.selectbox("Chọn Hướng Đã Lưu:", options)
@@ -94,35 +95,29 @@ if st.session_state.saved_angles:
 else:
     default_true_angle = 0.0
 
-# 2 O nhap lieu thong so co ban
 huong_chinh_xac = st.number_input("Hướng Chính Xác", min_value=0.0, max_value=360.0, value=float(default_true_angle), step=0.1)
 huong_do_duoc = st.number_input("Hướng Đo Được", min_value=0.0, max_value=360.0, value=0.0, step=0.1)
 
-st.write("") # Tao khoang trang
+st.write("") 
 
-# --- PHAN CHON CHE DO ---
 che_do = st.radio("Chọn chức năng:", ["Tìm Sơn", "Đo Hướng"], horizontal=True)
 
-# Hien thi o nhap lieu hoac chon lua tuy thuoc vao che do
 if che_do == "Đo Hướng":
     huong_can_do = st.number_input("Hướng La Bàn Đo", min_value=0.0, max_value=360.0, value=0.0, step=0.1)
 else:
     son_can_tim = st.selectbox("Chọn 1 trong 24 Sơn:", SON_HUONG_24)
 
-# Xu ly phep tinh
 if st.button("Kết Quả", type="primary", use_container_width=True):
     chenh_lech = huong_chinh_xac - huong_do_duoc
-    
     st.write("---")
     
     if che_do == "Đo Hướng":
         ket_qua = (huong_can_do + chenh_lech) % 360
         index = int(((ket_qua + 7.5) % 360) / 15)
         son_huong = SON_HUONG_24[index]
-        
         st.subheader(f"KẾT QUẢ: {ket_qua:.1f} độ - {son_huong}")
         
-    else: # Che do "Tim Son"
+    else:
         index_son = SON_HUONG_24.index(son_can_tim)
         tam_son_thuc_te = index_son * 15
         
@@ -133,4 +128,5 @@ if st.button("Kết Quả", type="primary", use_container_width=True):
         ket_thuc_la_ban = (ket_thuc_thuc_te - chenh_lech) % 360
         
         st.subheader(f"KẾT QUẢ TÌM SƠN {son_can_tim.upper()}:")
+        st.write(f"Trên la bàn của bạn, sơn **{son_can_tim}** sẽ hiển thị nằm trong khoảng:")
         st.info(f"Từ **{bat_dau_la_ban:.1f} độ** đến **{ket_thuc_la_ban:.1f} độ**")
