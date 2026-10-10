@@ -58,7 +58,7 @@ st.header("1. Quản Lý")
 
 col1, col2 = st.columns([2, 1])
 with col1:
-    new_name = st.text_input("Ten vi tri")
+    new_name = st.text_input("Tên Vị Trí")
 with col2:
     new_angle = st.number_input("Độ Chính Xác", min_value=0.0, max_value=360.0, step=0.1)
 
@@ -128,5 +128,4 @@ if st.button("Kết Quả", type="primary", use_container_width=True):
         ket_thuc_la_ban = (ket_thuc_thuc_te - chenh_lech) % 360
         
         st.subheader(f"KẾT QUẢ TÌM SƠN {son_can_tim.upper()}:")
-        st.write(f"Trên la bàn của bạn, sơn **{son_can_tim}** sẽ hiển thị nằm trong khoảng:")
         st.info(f"Từ **{bat_dau_la_ban:.1f} độ** đến **{ket_thuc_la_ban:.1f} độ**")
